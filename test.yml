@@ -1,0 +1,13 @@
+a:
+  constructor: NewA
+b:
+  constructor: NewB
+  arguments:
+    - "%a%"
+    - "data_b"
+c:
+  constructor: NewC
+  arguments:
+    - "%a%"
+    - "%b%"
+    - "data_c"
