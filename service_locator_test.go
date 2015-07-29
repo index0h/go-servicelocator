@@ -29,7 +29,7 @@ func TestSet_Duplicate(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	constructorA := func() (string) {
+	constructorA := func() string {
 		return "A"
 	}
 
@@ -104,7 +104,7 @@ func TestGetConfig_FileNotFound(t *testing.T) {
 	sl := New("some_unknown_file", "yaml")
 
 	var result iternalConfigMap
-	caller := func(){
+	caller := func() {
 		result = sl.getConfig()
 	}
 
@@ -117,7 +117,7 @@ func TestGetConfig_WrongFileType(t *testing.T) {
 	sl := New("test", "wrong_type_here")
 
 	var result iternalConfigMap
-	caller := func(){
+	caller := func() {
 		result = sl.getConfig()
 	}
 

@@ -110,7 +110,7 @@ func (sl *ServiceLocator) Get(name string) (service interface{}, err error) {
 	panic(errors.New("invalid constructor: " + name))
 }
 
-func (sl *ServiceLocator) getConfig() (iternalConfigMap) {
+func (sl *ServiceLocator) getConfig() iternalConfigMap {
 	if sl.config != nil {
 		return sl.config
 	}
@@ -130,7 +130,7 @@ func (sl *ServiceLocator) getConfig() (iternalConfigMap) {
 	return sl.config
 }
 
-func (sl *ServiceLocator) getConfigForService(name string) (*iternalConfig) {
+func (sl *ServiceLocator) getConfigForService(name string) *iternalConfig {
 	config := sl.getConfig()
 
 	if result, found := config[name]; found {
