@@ -85,7 +85,7 @@ func (sl *ServiceLocator) Get(name string) (service interface{}, err error) {
 
 	constructor, found := sl.constructors[serviceConfig.Constructor]
 	if !found {
-		return nil, errors.New("constructor not found for service: " + name)
+		panic(errors.New("constructor not found for service: " + name))
 	}
 
 	var result []reflect.Value
@@ -98,13 +98,13 @@ func (sl *ServiceLocator) Get(name string) (service interface{}, err error) {
 
 	switch len(result) {
 	case 1:
-		return result[0].Interface().(interface{}), nil
+		return result[0].Interface(), nil
 	case 2:
 		if result[1].Interface() != nil {
 			panic(result[1].Interface().(error))
 		}
 
-		return result[0].Interface().(interface{}), nil
+		return result[0].Interface(), nil
 	}
 
 	panic(errors.New("invalid constructor: " + name))
