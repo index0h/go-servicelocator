@@ -5,50 +5,54 @@ import (
 	"testing"
 )
 
-func TestRegisterConstructor(t *testing.T) {
+func TestSet(t *testing.T) {
 	function := func(...interface{}) (interface{}, error) {
 		return "A", nil
 	}
 
 	sl := New("test", "yaml")
-	err := sl.RegisterConstructor("A", function)
+	err := sl.Set("A", function)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, sl.constructors["A"])
 }
 
-func TestRegisterConstructor_Duplicate(t *testing.T) {
+func TestSet_Duplicate(t *testing.T) {
 	function := func(...interface{}) (interface{}, error) {
 		return "A", nil
 	}
 
 	sl := New("test", "yaml")
-	sl.RegisterConstructor("A", function)
+	sl.Set("A", function)
 
-	assert.NotNil(t, sl.RegisterConstructor("A", function))
+	assert.NotNil(t, sl.Set("A", function))
 }
 
 func TestGet(t *testing.T) {
-	constructorA := func(arguments ...interface{}) (interface{}, error) {
-		return "A", nil
+	constructorA := func() (string) {
+		return "A"
 	}
 
-	constructorB := func(arguments ...interface{}) (interface{}, error) {
-		return arguments, nil
+	constructorB := func(serviceA string, dataB string) ([2]string, error) {
+		return [2]string{serviceA, dataB}, nil
 	}
 
-	constructorC := func(arguments ...interface{}) (interface{}, error) {
-		return arguments, nil
+	constructorC := func(serviceA string, serviceB [2]string, dataC string) ([3]string, error) {
+		return [3]string{serviceA, (serviceB[0] + serviceB[1]), dataC}, nil
 	}
 
 	sl := New("test", "yaml")
-	sl.RegisterConstructor("NewA", constructorA)
-	sl.RegisterConstructor("NewB", constructorB)
-	sl.RegisterConstructor("NewC", constructorC)
+	errSet1 := sl.Set("NewA", constructorA)
+	errSet2 := sl.Set("NewB", constructorB)
+	errSet3 := sl.Set("NewC", constructorC)
+
+	assert.Nil(t, errSet1)
+	assert.Nil(t, errSet2)
+	assert.Nil(t, errSet3)
 
 	expectedA := "A"
-	expectedB := []interface{}{"A", "data_b"}
-	expectedC := []interface{}{expectedA, expectedB, "data_c"}
+	expectedB := [2]string{expectedA, "data_b"}
+	expectedC := [3]string{expectedA, (expectedB[0] + expectedB[1]), "data_c"}
 
 	actualA, errA := sl.Get("a")
 	actualB, errB := sl.Get("b")
@@ -71,7 +75,7 @@ func TestGet_Duplicate(t *testing.T) {
 	}
 
 	sl := New("test", "yaml")
-	sl.RegisterConstructor("NewA", constructor)
+	sl.Set("NewA", constructor)
 
 	actual1, err1 := sl.Get("a")
 	actual2, err2 := sl.Get("a")
@@ -91,27 +95,34 @@ func TestGetConfig(t *testing.T) {
 		"c": {Constructor: "NewC", Arguments: []interface{}{"%a%", "%b%", "data_c"}},
 	}
 
-	actual, err := sl.getConfig()
+	actual := sl.getConfig()
 
-	assert.Nil(t, err)
 	assert.Equal(t, expected, actual)
 }
 
 func TestGetConfig_FileNotFound(t *testing.T) {
 	sl := New("some_unknown_file", "yaml")
 
-	result, err := sl.getConfig()
+	var result iternalConfigMap
+	caller := func(){
+		result = sl.getConfig()
+	}
 
-	assert.NotNil(t, err)
+	assert.Panics(t, caller)
+
 	assert.Nil(t, result)
 }
 
 func TestGetConfig_WrongFileType(t *testing.T) {
 	sl := New("test", "wrong_type_here")
 
-	result, err := sl.getConfig()
+	var result iternalConfigMap
+	caller := func(){
+		result = sl.getConfig()
+	}
 
-	assert.NotNil(t, err)
+	assert.Panics(t, caller)
+
 	assert.Nil(t, result)
 }
 
@@ -120,8 +131,7 @@ func TestGetConfigForService(t *testing.T) {
 
 	expected := iternalConfig{Constructor: "NewC", Arguments: []interface{}{"%a%", "%b%", "data_c"}}
 
-	actual, err := sl.getConfigForService("c")
+	actual := sl.getConfigForService("c")
 
-	assert.Nil(t, err)
 	assert.Equal(t, expected, *actual)
 }
