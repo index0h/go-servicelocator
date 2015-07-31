@@ -5,40 +5,40 @@ import (
 	"testing"
 )
 
-func TestSet(t *testing.T) {
+func TestSetConstructor(t *testing.T) {
 	function := func(...interface{}) (interface{}, error) {
 		return "A", nil
 	}
 
-	sl := New("test", "yaml")
-	err := sl.Set("A", function)
+	sl := New("test")
+	err := sl.SetConstructor("A", function)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, sl.constructors["A"])
 }
 
-func TestSet_Duplicate(t *testing.T) {
+func TestSetConstructor_Duplicate(t *testing.T) {
 	function := func(...interface{}) (interface{}, error) {
 		return "A", nil
 	}
 
-	sl := New("test", "yaml")
-	sl.Set("A", function)
+	sl := New("test")
+	sl.SetConstructor("A", function)
 
-	assert.NotNil(t, sl.Set("A", function))
+	assert.NotNil(t, sl.SetConstructor("A", function))
 }
 
-func TestSet_DuplicateWithPanic(t *testing.T) {
+func TestSetConstructor_DuplicateWithPanic(t *testing.T) {
 	function := func(...interface{}) (interface{}, error) {
 		return "A", nil
 	}
 
-	sl := New("test", "yaml")
+	sl := New("test")
 	sl.SetPanicMode(true)
-	sl.Set("A", function)
+	sl.SetConstructor("A", function)
 
 	caller := func() {
-		sl.Set("A", function)
+		sl.SetConstructor("A", function)
 	}
 
 	assert.Panics(t, caller)
@@ -57,10 +57,10 @@ func TestGet(t *testing.T) {
 		return [3]string{serviceA, (serviceB[0] + serviceB[1]), dataC}, nil
 	}
 
-	sl := New("test", "yaml")
-	errSet1 := sl.Set("NewA", constructorA)
-	errSet2 := sl.Set("NewB", constructorB)
-	errSet3 := sl.Set("NewC", constructorC)
+	sl := New("test")
+	errSet1 := sl.SetConstructor("NewA", constructorA)
+	errSet2 := sl.SetConstructor("NewB", constructorB)
+	errSet3 := sl.SetConstructor("NewC", constructorC)
 
 	assert.Nil(t, errSet1)
 	assert.Nil(t, errSet2)
@@ -69,7 +69,6 @@ func TestGet(t *testing.T) {
 	expectedA := "A"
 	expectedB := [2]string{expectedA, "data_b"}
 	expectedC := [3]string{expectedA, (expectedB[0] + expectedB[1]), "data_c"}
-
 	actualA, errA := sl.Get("a")
 	actualB, errB := sl.Get("b")
 	actualC, errC := sl.Get("c")
@@ -90,8 +89,8 @@ func TestGet_Duplicate(t *testing.T) {
 		return &result, nil
 	}
 
-	sl := New("test", "yaml")
-	sl.Set("NewA", constructor)
+	sl := New("test")
+	sl.SetConstructor("NewA", constructor)
 
 	actual1, err1 := sl.Get("a")
 	actual2, err2 := sl.Get("a")
@@ -103,7 +102,7 @@ func TestGet_Duplicate(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	sl := New("test", "yaml")
+	sl := New("test")
 
 	expected := iternalConfigMap{
 		"a": {Constructor: "NewA"},
@@ -117,7 +116,7 @@ func TestGetConfig(t *testing.T) {
 }
 
 func TestGetConfig_FileNotFound(t *testing.T) {
-	sl := New("some_unknown_file", "yaml")
+	sl := New("some_unknown_file")
 
 	var result iternalConfigMap
 	caller := func() {
@@ -130,7 +129,8 @@ func TestGetConfig_FileNotFound(t *testing.T) {
 }
 
 func TestGetConfig_WrongFileType(t *testing.T) {
-	sl := New("test", "wrong_type_here")
+	sl := New("test")
+	sl.SetConfigType("wrong_type_here")
 
 	var result iternalConfigMap
 	caller := func() {
@@ -143,7 +143,7 @@ func TestGetConfig_WrongFileType(t *testing.T) {
 }
 
 func TestGetConfigForService(t *testing.T) {
-	sl := New("test", "yaml")
+	sl := New("test")
 
 	expected := iternalConfig{Constructor: "NewC", Arguments: []interface{}{"%a%", "%b%", "data_c"}}
 
