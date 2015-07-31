@@ -21,6 +21,7 @@ type iternalConfig struct {
 type iternalConfigMap map[string]iternalConfig
 
 type ServiceLocator struct {
+	panicMode bool
 	configLoader *viper.Viper
 	constructors map[string]reflect.Value
 	services     map[string]interface{}
@@ -47,7 +48,12 @@ func (sl *ServiceLocator) Set(name string, constructor interface{}) error {
 	_, foundService := sl.services[name]
 	_, foundConstructor := sl.constructors[name]
 	if foundService || foundConstructor {
-		return errors.New("service already exists: " + name)
+		err := errors.New("service already exists: " + name)
+		if sl.panicMode {
+			panic(err)
+		}
+
+		return err
 	}
 
 	constructorType := reflect.TypeOf(constructor)
@@ -59,9 +65,19 @@ func (sl *ServiceLocator) Set(name string, constructor interface{}) error {
 	}
 
 	if numOut := constructorType.NumOut(); (numOut > 2) || (numOut == 0) {
-		return errors.New("invalid count result elements: " + string(numOut) + " in constructor: " + name)
+		err := errors.New("invalid count result elements: " + string(numOut) + " in constructor: " + name)
+		if sl.panicMode {
+			panic(err)
+		}
+
+		return err
 	} else if (numOut == 2) && constructorType.Out(1).Kind() != reflect.Interface {
-		return errors.New("last result element must be error type in constructor:" + name)
+		err := errors.New("last result element must be error type in constructor:" + name)
+		if sl.panicMode {
+			panic(err)
+		}
+
+		return err
 	}
 
 	sl.constructors[name] = reflect.ValueOf(constructor)
@@ -74,12 +90,14 @@ func (sl *ServiceLocator) Get(name string) (service interface{}, err error) {
 		return service, nil
 	}
 
-	defer func() {
-		if exception := recover(); exception != nil {
-			service = nil
-			err = exception.(error)
-		}
-	}()
+	if !sl.panicMode {
+		defer func() {
+			if exception := recover(); exception != nil {
+				service = nil
+				err = exception.(error)
+			}
+		}()
+	}
 
 	serviceConfig := sl.getConfigForService(name)
 
@@ -108,6 +126,10 @@ func (sl *ServiceLocator) Get(name string) (service interface{}, err error) {
 	}
 
 	panic(errors.New("invalid constructor: " + name))
+}
+
+func (sl *ServiceLocator) SetPanicMode(mode bool) {
+	sl.panicMode = mode
 }
 
 func (sl *ServiceLocator) getConfig() iternalConfigMap {

@@ -28,6 +28,22 @@ func TestSet_Duplicate(t *testing.T) {
 	assert.NotNil(t, sl.Set("A", function))
 }
 
+func TestSet_DuplicateWithPanic(t *testing.T) {
+	function := func(...interface{}) (interface{}, error) {
+		return "A", nil
+	}
+
+	sl := New("test", "yaml")
+	sl.SetPanicMode(true)
+	sl.Set("A", function)
+
+	caller := func() {
+		sl.Set("A", function)
+	}
+
+	assert.Panics(t, caller)
+}
+
 func TestGet(t *testing.T) {
 	constructorA := func() string {
 		return "A"
