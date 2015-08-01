@@ -22,6 +22,7 @@ type iternalConfigMap map[string]iternalConfig
 
 type ServiceLocator struct {
 	panicMode bool
+	configLoaded bool
 	logger LoggerInterface
 	configLoader *viper.Viper
 	constructors map[string]reflect.Value
@@ -35,6 +36,7 @@ func New(fileName string) *ServiceLocator {
 	configLoader.SetConfigName(fileName)
 
 	return &ServiceLocator{
+		config:       make(iternalConfigMap),
 		configLoader: configLoader,
 		constructors: make(map[string]reflect.Value),
 		services:     make(map[string]interface{}),
@@ -155,7 +157,7 @@ func (sl *ServiceLocator) SetConfigType(configType string) {
 }
 
 func (sl *ServiceLocator) getConfig() iternalConfigMap {
-	if sl.config != nil {
+	if (sl.config != nil) && sl.configLoaded {
 		return sl.config
 	}
 
@@ -163,13 +165,11 @@ func (sl *ServiceLocator) getConfig() iternalConfigMap {
 		sl.panic(err)
 	}
 
-	config := make(iternalConfigMap)
+	sl.configLoaded = true
 
-	if err := sl.configLoader.Marshal(&config); err != nil {
+	if err := sl.configLoader.Marshal(&sl.config); err != nil {
 		sl.panic(err)
 	}
-
-	sl.config = config
 
 	return sl.config
 }
