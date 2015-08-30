@@ -5,6 +5,8 @@ import (
 	"github.com/spf13/viper"
 	"reflect"
 	"regexp"
+	"runtime"
+	"path"
 )
 
 var dependencyRegexp *regexp.Regexp
@@ -13,12 +15,12 @@ func init() {
 	dependencyRegexp = regexp.MustCompile("%(\\w+)%")
 }
 
-type iternalConfig struct {
+type internalConfig struct {
 	Arguments   []interface{}
 	Constructor string
 }
 
-type iternalConfigMap map[string]iternalConfig
+type internalConfigMap map[string]internalConfig
 
 type ServiceLocator struct {
 	panicMode bool
@@ -27,7 +29,7 @@ type ServiceLocator struct {
 	configLoader *viper.Viper
 	constructors map[string]reflect.Value
 	services     map[string]interface{}
-	config       iternalConfigMap
+	config       internalConfigMap
 }
 
 func New(fileName string) *ServiceLocator {
@@ -35,8 +37,11 @@ func New(fileName string) *ServiceLocator {
 	configLoader.SetConfigType("yaml")
 	configLoader.SetConfigName(fileName)
 
+	_, filename, _, _ := runtime.Caller(1)
+	configLoader.AddConfigPath(path.Dir(filename))
+
 	return &ServiceLocator{
-		config:       make(iternalConfigMap),
+		config:       make(internalConfigMap),
 		configLoader: configLoader,
 		constructors: make(map[string]reflect.Value),
 		services:     make(map[string]interface{}),
@@ -141,7 +146,7 @@ func (sl *ServiceLocator) SetConfig(serviceName string, constructorName string, 
 		sl.warning(errors.New("config already exists: " + serviceName))
 	}
 
-	sl.config[serviceName] = iternalConfig{Constructor:constructorName, Arguments:arguments}
+	sl.config[serviceName] = internalConfig{Constructor:constructorName, Arguments:arguments}
 }
 
 func (sl *ServiceLocator) SetPanicMode(mode bool) {
@@ -156,7 +161,7 @@ func (sl *ServiceLocator) SetConfigType(configType string) {
 	sl.configLoader.SetConfigType(configType)
 }
 
-func (sl *ServiceLocator) getConfig() iternalConfigMap {
+func (sl *ServiceLocator) getConfig() internalConfigMap {
 	if (sl.config != nil) && sl.configLoaded {
 		return sl.config
 	}
@@ -174,7 +179,7 @@ func (sl *ServiceLocator) getConfig() iternalConfigMap {
 	return sl.config
 }
 
-func (sl *ServiceLocator) getConfigForService(name string) *iternalConfig {
+func (sl *ServiceLocator) getConfigForService(name string) *internalConfig {
 	config := sl.getConfig()
 
 	if result, found := config[name]; found {

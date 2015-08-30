@@ -104,10 +104,10 @@ func TestGet_Duplicate(t *testing.T) {
 func TestGetConfig(t *testing.T) {
 	sl := New("test")
 
-	expected := iternalConfigMap{
-		"a": {Constructor: "NewA"},
-		"b": {Constructor: "NewB", Arguments: []interface{}{"%a%", "data_b"}},
-		"c": {Constructor: "NewC", Arguments: []interface{}{"%a%", "%b%", "data_c"}},
+	expected := internalConfigMap{
+		"a": internalConfig{Constructor: "NewA"},
+		"b": internalConfig{Constructor: "NewB", Arguments: []interface{}{"%a%", "data_b"}},
+		"c": internalConfig{Constructor: "NewC", Arguments: []interface{}{"%a%", "%b%", "data_c"}},
 	}
 
 	actual := sl.getConfig()
@@ -118,7 +118,7 @@ func TestGetConfig(t *testing.T) {
 func TestGetConfig_FileNotFound(t *testing.T) {
 	sl := New("some_unknown_file")
 
-	var result iternalConfigMap
+	var result internalConfigMap
 	caller := func() {
 		result = sl.getConfig()
 	}
@@ -132,7 +132,7 @@ func TestGetConfig_WrongFileType(t *testing.T) {
 	sl := New("test")
 	sl.SetConfigType("wrong_type_here")
 
-	var result iternalConfigMap
+	var result internalConfigMap
 	caller := func() {
 		result = sl.getConfig()
 	}
@@ -145,7 +145,7 @@ func TestGetConfig_WrongFileType(t *testing.T) {
 func TestGetConfigForService(t *testing.T) {
 	sl := New("test")
 
-	expected := iternalConfig{Constructor: "NewC", Arguments: []interface{}{"%a%", "%b%", "data_c"}}
+	expected := internalConfig{Constructor: "NewC", Arguments: []interface{}{"%a%", "%b%", "data_c"}}
 
 	actual := sl.getConfigForService("c")
 
