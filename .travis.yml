@@ -7,7 +7,7 @@ go:
 
 install:
   - go get -t -v golang.org/x/tools/cmd/cover
-  - go get -t -v -u github.com/golang/lint/golint
+  - go get -t -v -u golang.org/x/lint/golint
   - go get -t -v github.com/mattn/goveralls
   - go get -t -v ./...
 
